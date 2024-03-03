@@ -6,6 +6,7 @@ const {
   getSingelProduct,
   getAllProducts,
   getAllUsers,
+  updateProduct,
 } = require("../controllers/dataController");
 const authMiddelware = require("../middlewares/authVerifyMiddleware");
 
@@ -36,6 +37,12 @@ router.post(
   authMiddelware,
   upload.array("images"),
   addNewProduct
+);
+router.patch(
+  "/updateProduct/:id",
+  authMiddelware,
+  upload.array("images"),
+  updateProduct
 );
 router.get("/allproducts", getAllProducts);
 router.get("/allusers", getAllUsers);

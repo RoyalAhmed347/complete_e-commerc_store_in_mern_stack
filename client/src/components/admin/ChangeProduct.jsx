@@ -3,6 +3,7 @@ import PageTitle from "./PageTitle";
 import { useAdminAuthHook } from "../../context/AdminAuthContext";
 import { FaCloudUploadAlt } from "react-icons/fa";
 import { toast } from "react-toastify";
+import { MdDelete } from "react-icons/md";
 
 import axios from "axios";
 import { useParams } from "react-router-dom";
@@ -17,6 +18,7 @@ const ChangeProduct = () => {
   });
   const [productData, setProductData] = useState({});
   const [loadProduct, setLoadProduct] = useState(true);
+  const [localImage, setlocalImage] = useState(false);
 
   const { getSingleProduct, singleProduct } = useAdminProductHook();
 
@@ -24,10 +26,18 @@ const ChangeProduct = () => {
 
   useEffect(() => {
     setLoadProduct(true);
+    setlocalImage(false);
     getSingleProduct(id).then((res) => {
       setProductData(res.data.Product[0]);
-      console.log("🚀 ~ getSingleProduct ~ ProductData:", productData);
+
+      setImages((prvData) => {
+        return {
+          ...prvData,
+          pre: res.data.Product[0].images,
+        };
+      });
       setLoadProduct(false);
+      setlocalImage(false);
     });
   }, []);
 
@@ -55,9 +65,53 @@ const ChangeProduct = () => {
         date: allImages,
       };
     });
-    console.log(images);
+    setlocalImage(true);
   };
 
+  const removeImg = (id) => {
+    const newData = [];
+    for (let i = 0; i < images.date.length; i++) {
+      const element = images.date[i];
+      if (id !== i) {
+        newData.push(element);
+      }
+    }
+    const newPrev = images.pre.filter((elem, i) => {
+      return id !== i;
+    });
+    setImages((prvData) => {
+      return {
+        ...prvData,
+        pre: newPrev,
+        date: newData,
+      };
+    });
+    console.log(images.date);
+  };
+
+  const updateImages = async (e) => {
+    try {
+      const formData = new FormData();
+
+      for (let i = 0; i < images.date.length; i++) {
+        const element = images.date[i];
+        formData.append("images", element);
+      }
+
+      const result = await axios.patch(
+        `http://localhost:3002/api/data/updateProduct/${id}`,
+        formData,
+        {
+          headers: {
+            Authorization: adminToken,
+          },
+        }
+      );
+      toast.success(result.data.message);
+    } catch (error) {
+      console.log(error);
+    }
+  };
   const createProduct = async (e) => {
     e.preventDefault();
     try {
@@ -83,7 +137,11 @@ const ChangeProduct = () => {
       );
       toast.success(result.data.message);
     } catch (error) {
-      console.log(error.response.data.message);
+      toast(
+        error.response.data.message
+          ? error.response.data.message
+          : error.response.data.msg
+      );
     }
   };
 
@@ -150,14 +208,49 @@ const ChangeProduct = () => {
                   </label>
                 </div>
                 <div className="w-full flex gap-2 border-2 flex-wrap justify-around mt-3">
-                  {images.pre.map((elem, index) => {
-                    return (
-                      <div className="w-20 h-20 overflow-hidden" key={index}>
-                        <img src={elem.element} alt={index} />
-                      </div>
-                    );
-                  })}
+                  {localImage
+                    ? images.pre.map((elem, index) => {
+                        return (
+                          <div
+                            className="group w-20 h-20 overflow-hidden relative"
+                            key={index}
+                          >
+                            <img
+                              src={elem.element}
+                              alt={index}
+                              className="absolute opacity-0:"
+                            />
+                            <div className="w-full h-full  justify-center items-center absolute z-10 text-white bg-slate-900 bg-opacity-70 hidden group-hover:flex ">
+                              <MdDelete
+                                size={22}
+                                className="cursor-pointer"
+                                onClick={() => removeImg(index)}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })
+                    : images.pre.map((elem, index) => {
+                        return (
+                          <div
+                            className="w-20 h-20 overflow-hidden"
+                            key={index}
+                          >
+                            <img
+                              src={`http://localhost:3002${elem}`}
+                              alt={index}
+                            />
+                          </div>
+                        );
+                      })}
                 </div>
+                {localImage && (
+                  <div className="mt-3">
+                    <span className="btn" onClick={updateImages}>
+                      Update
+                    </span>
+                  </div>
+                )}
               </div>
               <input
                 type="file"

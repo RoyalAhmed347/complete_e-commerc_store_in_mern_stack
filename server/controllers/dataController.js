@@ -64,6 +64,35 @@ const getSingelProduct = async (req, res) => {
   }
 };
 
+const updateProduct = async (req, res) => {
+  try {
+    const _id = req.params.id;
+
+    const userImages = req.files;
+    const images = userImages.map((i) => {
+      return `/images/products/${i.filename}`;
+    });
+
+    const thumbnail = images[0];
+    images.shift();
+
+    const updatedProduct = await PRODUCT.findOneAndUpdate(
+      { _id },
+      { images, thumbnail }
+    );
+
+    res.json({
+      message: "product is updated",
+      updatedProduct,
+    });
+  } catch (error) {
+    res.status(400).json({
+      message: "something is wrong",
+      error,
+    });
+  }
+};
+
 const getAllProducts = async (req, res) => {
   try {
     const allproducts = await PRODUCT.find({});
@@ -98,4 +127,5 @@ module.exports = {
   addNewProduct,
   getAllProducts,
   getAllUsers,
+  updateProduct,
 };
